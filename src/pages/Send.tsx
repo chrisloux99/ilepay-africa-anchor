@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, Scan, User, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,40 +7,111 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import QRScanner from '@/components/QRScanner';
 
 const Send = () => {
   const [formData, setFormData] = useState({
     recipient: '',
     amount: '',
-    currency: 'XLM',
+    currency: 'iLede',
     memo: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchWalletBalance();
+    }
+  }, [user]);
+
+  const fetchWalletBalance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', user?.id)
+        .eq('asset_code', 'iLede')
+        .single();
+
+      if (error) throw error;
+      setWalletBalance(data?.balance || 0);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    }
+  };
+
+  const handleQRScan = (result: string) => {
+    // Parse QR code result (could be a Stellar address or payment request)
+    try {
+      if (result.startsWith('stellar:')) {
+        const url = new URL(result);
+        setFormData(prev => ({
+          ...prev,
+          recipient: url.pathname,
+          amount: url.searchParams.get('amount') || '',
+          memo: url.searchParams.get('memo') || ''
+        }));
+      } else {
+        // Assume it's just a Stellar address
+        setFormData(prev => ({ ...prev, recipient: result }));
+      }
+      setShowQRScanner(false);
+    } catch (error) {
+      toast({
+        title: "Invalid QR Code",
+        description: "The scanned QR code is not a valid payment request",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Placeholder for Stellar SDK integration
     try {
-      // TODO: Integrate with Stellar SDK
-      // Example: await stellarService.sendPayment(formData);
-      
-      // Simulate API call
+      // Check if user has sufficient balance
+      if (parseFloat(formData.amount) > walletBalance) {
+        throw new Error('Insufficient balance');
+      }
+
+      // Create transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user?.id,
+          transaction_type: 'send',
+          amount: parseFloat(formData.amount),
+          asset_code: formData.currency,
+          recipient_address: formData.recipient,
+          memo: formData.memo,
+          status: 'pending',
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Here you would integrate with Stellar SDK to submit the transaction
+      // For now, simulate the transaction
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
         title: "Transaction Submitted",
-        description: `Sending ${formData.amount} ${formData.currency} to ${formData.recipient}`,
+        description: `Sending ${formData.amount} ${formData.currency} to ${formData.recipient.substring(0, 8)}...`,
       });
       
       // Reset form
-      setFormData({ recipient: '', amount: '', currency: 'XLM', memo: '' });
-    } catch (error) {
+      setFormData({ recipient: '', amount: '', currency: 'iLede', memo: '' });
+      fetchWalletBalance(); // Refresh balance
+    } catch (error: any) {
       toast({
         title: "Transaction Failed", 
-        description: "Please check your details and try again.",
+        description: error.message || "Please check your details and try again.",
         variant: "destructive"
       });
     } finally {
@@ -81,7 +152,13 @@ const Send = () => {
                   required
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                  <Button type="button" size="sm" variant="ghost" className="p-2">
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="ghost" 
+                    className="p-2"
+                    onClick={() => setShowQRScanner(true)}
+                  >
                     <Scan className="w-4 h-4" />
                   </Button>
                   <Button type="button" size="sm" variant="ghost" className="p-2">
@@ -123,10 +200,10 @@ const Send = () => {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="iLede">iLede (Custom Asset)</SelectItem>
                     <SelectItem value="XLM">XLM (Stellar Lumens)</SelectItem>
                     <SelectItem value="USDC">USDC (USD Coin)</SelectItem>
                     <SelectItem value="EURC">EURC (Euro Coin)</SelectItem>
-                    <SelectItem value="CUSTOM">Custom Asset</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -157,6 +234,10 @@ const Send = () => {
                     <p className="font-medium">{formData.amount} {formData.currency}</p>
                   </div>
                   <div>
+                    <p className="text-muted-foreground">Available:</p>
+                    <p className="font-medium">{walletBalance.toFixed(7)} {formData.currency}</p>
+                  </div>
+                  <div>
                     <p className="text-muted-foreground">Network Fee:</p>
                     <p className="font-medium">0.00001 XLM</p>
                   </div>
@@ -172,13 +253,20 @@ const Send = () => {
             <Button 
               type="submit" 
               className="btn-wallet-primary w-full"
-              disabled={isLoading || !formData.recipient || !formData.amount}
+              disabled={isLoading || !formData.recipient || !formData.amount || parseFloat(formData.amount) > walletBalance}
             >
               {isLoading ? 'Processing...' : 'Send Payment'}
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      {/* QR Scanner */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onScan={handleQRScan}
+        onClose={() => setShowQRScanner(false)}
+      />
 
       {/* Recent Recipients */}
       <Card className="wallet-card mt-6">

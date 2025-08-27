@@ -12,10 +12,14 @@ import {
   Wallet,
   CreditCard,
   TrendingUp,
-  Shield
+  Shield,
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import Logo3D from './Logo3D';
 
 interface SidebarItem {
@@ -30,6 +34,7 @@ const sidebarItems: SidebarItem[] = [
   { title: 'Receive', url: '/receive', icon: Download },
   { title: 'Deposit', url: '/deposit', icon: Upload },
   { title: 'Withdraw', url: '/withdraw', icon: CreditCard },
+  { title: 'Telecom', url: '/telecom', icon: Smartphone },
   { title: 'History', url: '/history', icon: History },
   { title: 'Analytics', url: '/analytics', icon: TrendingUp },
   { title: 'Security', url: '/security', icon: Shield },
@@ -39,8 +44,21 @@ const sidebarItems: SidebarItem[] = [
 const WalletSidebar = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Sign Out Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <aside className="w-64 h-screen bg-card border-r border-border flex flex-col">
@@ -102,13 +120,24 @@ const WalletSidebar = () => {
               <Wallet className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">User Address</p>
+              <p className="text-sm font-medium truncate">{user?.user_metadata?.display_name || user?.email}</p>
               <p className="text-xs text-muted-foreground truncate">
-                GABC...XYZ123 {/* Placeholder Stellar address */}
+                iLe-Pay Wallet
               </p>
             </div>
           </div>
         </div>
+
+        {/* Sign Out Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
       </div>
     </aside>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowDownLeft, Copy, QrCode, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,14 +6,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import QRGenerator from '@/components/QRGenerator';
 
 const Receive = () => {
   const [requestAmount, setRequestAmount] = useState('');
   const [memo, setMemo] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Placeholder Stellar address - replace with actual user address
-  const walletAddress = 'GDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+  useEffect(() => {
+    if (user) {
+      fetchWalletAddress();
+    }
+  }, [user]);
+
+  const fetchWalletAddress = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('wallet_address')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      // Generate a placeholder address if none exists
+      setWalletAddress(data?.wallet_address || `GD${user?.id?.replace(/-/g, '').substring(0, 54).toUpperCase()}`);
+    } catch (error) {
+      console.error('Error fetching wallet address:', error);
+      setWalletAddress(`GD${user?.id?.replace(/-/g, '').substring(0, 54).toUpperCase()}`);
+    }
+  };
 
   const copyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
@@ -43,12 +68,13 @@ const Receive = () => {
   };
 
   const generatePaymentLink = () => {
-    const link = `stellar:${walletAddress}${requestAmount ? `?amount=${requestAmount}` : ''}${memo ? `&memo=${memo}` : ''}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Payment Link Copied",
-      description: "Payment request link copied to clipboard",
-    });
+    const baseUrl = `stellar:${walletAddress}`;
+    const params = new URLSearchParams();
+    
+    if (requestAmount) params.append('amount', requestAmount);
+    if (memo) params.append('memo', memo);
+    
+    return params.toString() ? `${baseUrl}?${params}` : baseUrl;
   };
 
   return (
@@ -73,9 +99,13 @@ const Receive = () => {
           <div className="space-y-4">
             <div className="p-4 bg-muted/50 rounded-lg border-2 border-dashed border-border">
               <div className="text-center space-y-4">
-                {/* QR Code Placeholder */}
-                <div className="w-48 h-48 mx-auto bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
-                  <QrCode className="w-24 h-24 text-muted-foreground" />
+                {/* QR Code */}
+                <div className="w-48 h-48 mx-auto rounded-lg flex items-center justify-center">
+                  <QRGenerator 
+                    value={generatePaymentLink()} 
+                    size={192}
+                    className="rounded-lg"
+                  />
                 </div>
                 <p className="text-sm text-muted-foreground">QR Code for your wallet address</p>
               </div>
@@ -152,7 +182,14 @@ const Receive = () => {
               />
             </div>
 
-            <Button className="btn-wallet-secondary w-full" onClick={generatePaymentLink}>
+            <Button className="btn-wallet-secondary w-full" onClick={() => {
+              const link = generatePaymentLink();
+              navigator.clipboard.writeText(link);
+              toast({
+                title: "Payment Link Copied",
+                description: "Payment request link copied to clipboard",
+              });
+            }}>
               Generate Payment Link
             </Button>
 
