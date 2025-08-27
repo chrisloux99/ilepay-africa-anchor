@@ -3,7 +3,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import WalletLayout from "./components/WalletLayout";
+import Dashboard from "./components/Dashboard";
+import Send from "./pages/Send";
+import Receive from "./pages/Receive";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import History from "./pages/History";
+import Analytics from "./pages/Analytics";
+import Security from "./pages/Security";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,7 +24,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<WalletLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="send" element={<Send />} />
+            <Route path="receive" element={<Receive />} />
+            <Route path="deposit" element={<Deposit />} />
+            <Route path="withdraw" element={<Withdraw />} />
+            <Route path="history" element={<History />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="security" element={<Security />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

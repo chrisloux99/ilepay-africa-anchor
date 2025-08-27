@@ -44,6 +44,14 @@ export default {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'
 				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))'
+				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
@@ -51,6 +59,13 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				wallet: {
+					bg: 'hsl(var(--wallet-bg))',
+					surface: 'hsl(var(--wallet-surface))',
+					primary: 'hsl(var(--wallet-primary))',
+					secondary: 'hsl(var(--wallet-secondary))',
+					accent: 'hsl(var(--wallet-accent))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -84,11 +99,67 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px) rotate(0deg)'
+					},
+					'50%': {
+						transform: 'translateY(-20px) rotate(5deg)'
+					}
+				},
+				'constellation-pulse': {
+					'0%, 100%': {
+						opacity: '0.3'
+					},
+					'50%': {
+						opacity: '0.8'
+					}
+				},
+				'logo-glow': {
+					'0%, 100%': {
+						filter: 'drop-shadow(0 0 20px hsl(var(--primary) / 0.5))'
+					},
+					'50%': {
+						filter: 'drop-shadow(0 0 40px hsl(var(--primary) / 0.8))'
+					}
+				},
+				'rotate-y': {
+					'0%': {
+						transform: 'rotateY(0deg)'
+					},
+					'100%': {
+						transform: 'rotateY(360deg)'
+					}
+				},
+				'fade-in-up': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(20px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'slide-in-right': {
+					'0%': {
+						transform: 'translateX(100%)'
+					},
+					'100%': {
+						transform: 'translateX(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 3s ease-in-out infinite',
+				'constellation-pulse': 'constellation-pulse 3s ease-in-out infinite',
+				'logo-glow': 'logo-glow 3s ease-in-out infinite',
+				'rotate-y': 'rotate-y 10s linear infinite',
+				'fade-in-up': 'fade-in-up 0.6s ease-out',
+				'slide-in-right': 'slide-in-right 0.3s ease-out'
 			}
 		}
 	},
