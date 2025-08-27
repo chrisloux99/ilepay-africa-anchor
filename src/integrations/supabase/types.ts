@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          country_code: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          country_code?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          country_code?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      telecom_services: {
+        Row: {
+          active: boolean
+          amount: number
+          created_at: string
+          data_amount: string | null
+          id: string
+          package_name: string
+          provider: string
+          service_type: string
+          validity_days: number | null
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          created_at?: string
+          data_amount?: string | null
+          id?: string
+          package_name: string
+          provider: string
+          service_type: string
+          validity_days?: number | null
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          data_amount?: string | null
+          id?: string
+          package_name?: string
+          provider?: string
+          service_type?: string
+          validity_days?: number | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          asset_code: string
+          asset_issuer: string | null
+          created_at: string
+          id: string
+          memo: string | null
+          phone_number: string | null
+          recipient_address: string | null
+          sender_address: string | null
+          service_type: string | null
+          status: string
+          stellar_tx_hash: string | null
+          telecom_provider: string | null
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset_code: string
+          asset_issuer?: string | null
+          created_at?: string
+          id?: string
+          memo?: string | null
+          phone_number?: string | null
+          recipient_address?: string | null
+          sender_address?: string | null
+          service_type?: string | null
+          status?: string
+          stellar_tx_hash?: string | null
+          telecom_provider?: string | null
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset_code?: string
+          asset_issuer?: string | null
+          created_at?: string
+          id?: string
+          memo?: string | null
+          phone_number?: string | null
+          recipient_address?: string | null
+          sender_address?: string | null
+          service_type?: string | null
+          status?: string
+          stellar_tx_hash?: string | null
+          telecom_provider?: string | null
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          asset_code: string
+          asset_issuer: string | null
+          balance: number
+          created_at: string
+          frozen: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_code?: string
+          asset_issuer?: string | null
+          balance?: number
+          created_at?: string
+          frozen?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_code?: string
+          asset_issuer?: string | null
+          balance?: number
+          created_at?: string
+          frozen?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
