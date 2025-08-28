@@ -25,7 +25,7 @@ const TelecomServices = () => {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -125,9 +125,9 @@ const TelecomServices = () => {
     }
   };
 
-  const filteredServices = selectedProvider 
-    ? services.filter(s => s.provider === selectedProvider)
-    : services;
+  const filteredServices = selectedProvider === 'all'
+    ? services
+    : services.filter(s => s.provider === selectedProvider);
 
   const dataServices = filteredServices.filter(s => s.service_type === 'data');
   const airtimeServices = filteredServices.filter(s => s.service_type === 'airtime');
@@ -181,7 +181,7 @@ const TelecomServices = () => {
                   <SelectValue placeholder="All Providers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Providers</SelectItem>
+                  <SelectItem value="all">All Providers</SelectItem>
                   {providers.map(provider => (
                     <SelectItem key={provider.id} value={provider.id}>
                       {provider.name}
@@ -204,7 +204,7 @@ const TelecomServices = () => {
               className={`wallet-card cursor-pointer transition-all ${
                 selectedProvider === provider.id ? 'ring-2 ring-primary' : ''
               }`}
-              onClick={() => setSelectedProvider(selectedProvider === provider.id ? '' : provider.id)}
+              onClick={() => setSelectedProvider(selectedProvider === provider.id ? 'all' : provider.id)}
             >
               <CardContent className="p-4 text-center">
                 <div className={`w-12 h-12 rounded-full ${provider.color} flex items-center justify-center mx-auto mb-2`}>
