@@ -1,1 +1,15 @@
 project_id = "jecwaulaaxwdqrchanzy"
+
+[auth]
+enabled = true
+schema = "auth"
+
+[db]
+port = 5432
+schema = "public"
+
+[functions.stellar-wallet]
+verify_jwt = true
+
+[functions.anchor-services] 
+verify_jwt = true
