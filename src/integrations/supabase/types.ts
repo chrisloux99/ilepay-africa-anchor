@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      anchor_transactions: {
+        Row: {
+          amount_fee: number | null
+          amount_in: number | null
+          amount_out: number | null
+          anchor_id: string | null
+          asset_code: string
+          asset_issuer: string | null
+          completed_at: string | null
+          created_at: string
+          external_tx_id: string | null
+          id: string
+          kind: string
+          memo: string | null
+          memo_type: string | null
+          more_info_url: string | null
+          refunds: Json | null
+          sep24_interactive_url: string | null
+          started_at: string
+          status: string
+          status_message: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_fee?: number | null
+          amount_in?: number | null
+          amount_out?: number | null
+          anchor_id?: string | null
+          asset_code: string
+          asset_issuer?: string | null
+          completed_at?: string | null
+          created_at?: string
+          external_tx_id?: string | null
+          id?: string
+          kind: string
+          memo?: string | null
+          memo_type?: string | null
+          more_info_url?: string | null
+          refunds?: Json | null
+          sep24_interactive_url?: string | null
+          started_at?: string
+          status?: string
+          status_message?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_fee?: number | null
+          amount_in?: number | null
+          amount_out?: number | null
+          anchor_id?: string | null
+          asset_code?: string
+          asset_issuer?: string | null
+          completed_at?: string | null
+          created_at?: string
+          external_tx_id?: string | null
+          id?: string
+          kind?: string
+          memo?: string | null
+          memo_type?: string | null
+          more_info_url?: string | null
+          refunds?: Json | null
+          sep24_interactive_url?: string | null
+          started_at?: string
+          status?: string
+          status_message?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kyc_status: {
+        Row: {
+          anchor_customer_id: string | null
+          created_at: string
+          fields: Json | null
+          id: string
+          last_error: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anchor_customer_id?: string | null
+          created_at?: string
+          fields?: Json | null
+          id?: string
+          last_error?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anchor_customer_id?: string | null
+          created_at?: string
+          fields?: Json | null
+          id?: string
+          last_error?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
