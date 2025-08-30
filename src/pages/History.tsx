@@ -1,84 +1,62 @@
-import React, { useState } from 'react';
-import { History as HistoryIcon, Filter, Download, ArrowUpRight, ArrowDownLeft, Upload, CreditCard, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { History as HistoryIcon, Filter, Download, ArrowUpRight, ArrowDownLeft, Upload, CreditCard, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useStellarWallet } from '@/hooks/useStellarWallet';
+import { useToast } from '@/hooks/use-toast';
 
 const History = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const { getStoredKeys, getBalance } = useStellarWallet();
+  const { toast } = useToast();
 
-  // Mock transaction data - replace with actual Stellar transaction history
-  const transactions = [
-    {
-      id: 'tx_1',
-      hash: '2b4e1f8c3d7a9e6b5c8f2a1d4e7b9c6f3a8d5e2b7c4f9a1d6e3b8c5f2a9d7e4',
-      type: 'receive',
-      amount: 250.00,
-      currency: 'USDC',
-      counterparty: 'GDXA...7891',
-      counterpartyName: 'John Smith',
-      memo: 'Invoice payment',
-      timestamp: '2024-01-15T10:30:00Z',
-      status: 'completed',
-      fee: 0.00001
-    },
-    {
-      id: 'tx_2',
-      hash: '8f3a1d5e2b7c4f9a6d3e8b5c2f9a7d4e1b6c3f8a5d2e9b7c4f1a8d5e3b9c6f2',
-      type: 'send',
-      amount: 150.50,
-      currency: 'XLM',
-      counterparty: 'GCAB...4567',
-      counterpartyName: 'Jane Doe',
-      memo: 'Dinner split',
-      timestamp: '2024-01-15T09:15:00Z',
-      status: 'completed',
-      fee: 0.00001
-    },
-    {
-      id: 'tx_3',
-      hash: '5d2e9b7c4f1a8d5e3b9c6f2a7d4e1b8c5f2a9d6e3b7c4f8a1d5e2b9c6f3a8d5',
-      type: 'deposit',
-      amount: 500.00,
-      currency: 'USDC',
-      counterparty: 'Bank Transfer',
-      counterpartyName: 'First National Bank',
-      memo: 'Account funding',
-      timestamp: '2024-01-14T16:45:00Z',
-      status: 'pending',
-      fee: 2.50
-    },
-    {
-      id: 'tx_4',
-      hash: '9c6f3a8d5e2b7c4f1a8d5e3b9c6f2a7d4e1b8c5f2a9d6e3b7c4f8a1d5e2b9c6',
-      type: 'withdraw',
-      amount: 75.25,
-      currency: 'USDC',
-      counterparty: 'Debit Card',
-      counterpartyName: 'Wells Fargo ****1234',
-      memo: 'Cash withdrawal',
-      timestamp: '2024-01-13T14:20:00Z',
-      status: 'completed',
-      fee: 1.50
-    },
-    {
-      id: 'tx_5',
-      hash: 'a1d5e2b9c6f3a8d5e2b7c4f1a8d5e3b9c6f2a7d4e1b8c5f2a9d6e3b7c4f8a1d',
-      type: 'send',
-      amount: 25.00,
-      currency: 'XLM',
-      counterparty: 'GDEF...8901',
-      counterpartyName: 'Coffee Shop',
-      memo: 'Payment for coffee',
-      timestamp: '2024-01-12T08:30:00Z',
-      status: 'failed',
-      fee: 0.00001
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    const keys = getStoredKeys();
+    if (!keys) {
+      toast({
+        title: "No Wallet Found",
+        description: "Create a wallet first to view transaction history",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
+
+    setIsLoadingTransactions(true);
+    try {
+      const balanceData = await getBalance();
+      if (balanceData?.recent_payments?.records) {
+        const formattedTx = balanceData.recent_payments.records.map((tx: any) => ({
+          id: tx.id,
+          hash: tx.transaction_hash,
+          type: tx.from === keys.publicKey ? 'send' : 'receive',
+          amount: parseFloat(tx.amount),
+          currency: tx.asset_type === 'native' ? 'XLM' : tx.asset_code || 'XLM',
+          counterparty: tx.from === keys.publicKey ? tx.to : tx.from,
+          counterpartyName: null,
+          memo: null,
+          timestamp: tx.created_at,
+          status: 'completed',
+          fee: 0.00001
+        }));
+        setTransactions(formattedTx);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -138,10 +116,24 @@ const History = () => {
               <p className="text-muted-foreground">Track all your wallet activities</p>
             </div>
           </div>
-          <Button variant="outline" onClick={exportTransactions}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={loadTransactions}
+              disabled={isLoadingTransactions}
+            >
+              {isLoadingTransactions ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {isLoadingTransactions ? 'Loading...' : 'Refresh'}
+            </Button>
+            <Button variant="outline" onClick={exportTransactions}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

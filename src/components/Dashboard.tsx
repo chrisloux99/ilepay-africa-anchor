@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -7,53 +7,69 @@ import {
   Eye, 
   EyeOff,
   Wallet,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState } from 'react';
+import { useStellarWallet } from '@/hooks/useStellarWallet';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [balanceData, setBalanceData] = useState<any>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const { getStoredKeys, getBalance, isLoading } = useStellarWallet();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Placeholder data - replace with real data from Stellar network
-  const walletData = {
-    totalBalance: 15420.67,
-    xlmBalance: 8930.45,
-    usdcBalance: 6490.22,
-    recentTransactions: [
-      {
-        id: '1',
-        type: 'receive',
-        amount: 250.00,
-        currency: 'USDC',
-        from: 'GDXA...7891',
-        timestamp: '2024-01-15T10:30:00Z',
-        status: 'completed'
-      },
-      {
-        id: '2',
-        type: 'send',
-        amount: 150.50,
-        currency: 'XLM',
-        to: 'GCAB...4567',
-        timestamp: '2024-01-15T09:15:00Z',
-        status: 'completed'
-      },
-      {
-        id: '3',
-        type: 'deposit',
-        amount: 500.00,
-        currency: 'USDC',
-        from: 'Bank Transfer',
-        timestamp: '2024-01-14T16:45:00Z',
-        status: 'pending'
-      }
-    ]
+  useEffect(() => {
+    loadWalletData();
+  }, []);
+
+  const loadWalletData = async () => {
+    const keys = getStoredKeys();
+    if (!keys) {
+      toast({
+        title: "No Wallet Found",
+        description: "Create a wallet first to view your balance",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoadingBalance(true);
+    try {
+      const balance = await getBalance();
+      setBalanceData(balance);
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    } finally {
+      setIsLoadingBalance(false);
+    }
   };
 
-  const formatBalance = (amount: number) => {
-    return balanceVisible ? `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '****';
+  const formatBalance = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return balanceVisible ? num.toFixed(7) : '****';
+  };
+
+  const getTotalBalance = () => {
+    if (!balanceData?.balances) return 0;
+    return balanceData.balances.reduce((total: number, asset: any) => {
+      if (asset.asset_type === 'native') return total + parseFloat(asset.balance);
+      return total + parseFloat(asset.balance || 0);
+    }, 0);
+  };
+
+  const getAssetBalance = (assetCode: string) => {
+    if (!balanceData?.balances) return '0';
+    const asset = balanceData.balances.find((b: any) => 
+      (assetCode === 'XLM' && b.asset_type === 'native') ||
+      (b.asset_code === assetCode)
+    );
+    return asset ? asset.balance : '0';
   };
 
   return (
@@ -85,13 +101,24 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="text-4xl font-bold gradient-primary bg-clip-text text-transparent">
-                {formatBalance(walletData.totalBalance)}
+                {isLoadingBalance ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  `${formatBalance(getTotalBalance())} XLM`
+                )}
               </div>
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1 text-success">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+12.5% this month</span>
-                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={loadWalletData}
+                  disabled={isLoadingBalance}
+                >
+                  {isLoadingBalance ? 'Refreshing...' : 'Refresh Balance'}
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -103,11 +130,17 @@ const Dashboard = () => {
             <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button className="btn-wallet-primary w-full justify-start">
+            <Button 
+              className="btn-wallet-primary w-full justify-start"
+              onClick={() => navigate('/send')}
+            >
               <ArrowUpRight className="w-4 h-4 mr-2" />
               Send Money
             </Button>
-            <Button className="btn-wallet-secondary w-full justify-start">
+            <Button 
+              className="btn-wallet-secondary w-full justify-start"
+              onClick={() => navigate('/receive')}
+            >
               <ArrowDownLeft className="w-4 h-4 mr-2" />
               Receive
             </Button>
@@ -127,8 +160,10 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatBalance(walletData.xlmBalance)}</div>
-            <p className="text-sm text-muted-foreground">≈ {balanceVisible ? '8,930.45 XLM' : '****'}</p>
+            <div className="text-2xl font-bold">
+              {formatBalance(getAssetBalance('XLM'))} XLM
+            </div>
+            <p className="text-sm text-muted-foreground">Native Stellar Asset</p>
           </CardContent>
         </Card>
 
@@ -142,8 +177,10 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatBalance(walletData.usdcBalance)}</div>
-            <p className="text-sm text-muted-foreground">≈ {balanceVisible ? '6,490.22 USDC' : '****'}</p>
+            <div className="text-2xl font-bold">
+              {formatBalance(getAssetBalance('USDC'))} USDC
+            </div>
+            <p className="text-sm text-muted-foreground">USD Coin on Stellar</p>
           </CardContent>
         </Card>
       </div>
@@ -155,45 +192,43 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {walletData.recentTransactions.map((tx) => (
+            {balanceData?.recent_payments?.records?.slice(0, 3).map((tx: any) => (
               <div key={tx.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    tx.type === 'receive' ? 'bg-success/20 text-success' :
-                    tx.type === 'send' ? 'bg-primary/20 text-primary' :
-                    'bg-warning/20 text-warning'
+                    tx.from === balanceData.account_id ? 'bg-primary/20 text-primary' : 'bg-success/20 text-success'
                   }`}>
-                    {tx.type === 'receive' ? <ArrowDownLeft className="w-5 h-5" /> :
-                     tx.type === 'send' ? <ArrowUpRight className="w-5 h-5" /> :
-                     <Wallet className="w-5 h-5" />}
+                    {tx.from === balanceData.account_id ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
                   </div>
                   <div>
-                    <p className="font-medium capitalize">{tx.type}</p>
+                    <p className="font-medium">
+                      {tx.from === balanceData.account_id ? 'Send' : 'Receive'}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {tx.type === 'send' ? `To: ${tx.to?.substring(0, 8)}...` :
-                       tx.type === 'receive' ? `From: ${tx.from?.substring(0, 8)}...` :
-                       tx.from}
+                      {tx.from === balanceData.account_id 
+                        ? `To: ${tx.to?.substring(0, 8)}...` 
+                        : `From: ${tx.from?.substring(0, 8)}...`
+                      }
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className={`font-medium ${
-                    tx.type === 'receive' ? 'text-success' :
-                    tx.type === 'send' ? 'text-primary' :
-                    'text-warning'
+                    tx.from === balanceData.account_id ? 'text-primary' : 'text-success'
                   }`}>
-                    {tx.type === 'send' ? '-' : '+'}{balanceVisible ? `${tx.amount} ${tx.currency}` : '****'}
+                    {tx.from === balanceData.account_id ? '-' : '+'}
+                    {balanceVisible ? `${tx.amount} ${tx.asset_type === 'native' ? 'XLM' : tx.asset_code}` : '****'}
                   </p>
-                  <p className={`text-xs ${
-                    tx.status === 'completed' ? 'text-success' :
-                    tx.status === 'pending' ? 'text-warning' :
-                    'text-destructive'
-                  }`}>
-                    {tx.status}
-                  </p>
+                  <p className="text-xs text-success">completed</p>
                 </div>
               </div>
-            ))}
+            )) || (
+              <div className="text-center py-8 text-muted-foreground">
+                <Wallet className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No recent transactions</p>
+                <p className="text-sm">Your transaction history will appear here</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

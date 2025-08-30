@@ -7,43 +7,51 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useStellarWallet } from '@/hooks/useStellarWallet';
 import QRScanner from '@/components/QRScanner';
 
 const Send = () => {
   const [formData, setFormData] = useState({
     recipient: '',
     amount: '',
-    currency: 'iLede',
+    currency: 'XLM',
     memo: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<any>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { getStoredKeys, getBalance, sendPayment, isLoading } = useStellarWallet();
 
   useEffect(() => {
-    if (user) {
-      fetchWalletBalance();
-    }
-  }, [user]);
+    fetchWalletBalance();
+  }, []);
 
   const fetchWalletBalance = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', user?.id)
-        .eq('asset_code', 'iLede')
-        .single();
+    const keys = getStoredKeys();
+    if (!keys) {
+      toast({
+        title: "No Wallet Found",
+        description: "Create a wallet first to send payments",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      if (error) throw error;
-      setWalletBalance(data?.balance || 0);
+    try {
+      const balance = await getBalance();
+      setWalletBalance(balance);
     } catch (error) {
       console.error('Error fetching balance:', error);
     }
+  };
+
+  const getAvailableBalance = () => {
+    if (!walletBalance?.balances) return 0;
+    const asset = walletBalance.balances.find((b: any) => 
+      (formData.currency === 'XLM' && b.asset_type === 'native') ||
+      (b.asset_code === formData.currency)
+    );
+    return asset ? parseFloat(asset.balance) : 0;
   };
 
   const handleQRScan = (result: string) => {
@@ -73,49 +81,32 @@ const Send = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      // Check if user has sufficient balance
-      if (parseFloat(formData.amount) > walletBalance) {
-        throw new Error('Insufficient balance');
-      }
-
-      // Create transaction record
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user?.id,
-          transaction_type: 'send',
-          amount: parseFloat(formData.amount),
-          asset_code: formData.currency,
-          recipient_address: formData.recipient,
-          memo: formData.memo,
-          status: 'pending',
-        });
-
-      if (transactionError) throw transactionError;
-
-      // Here you would integrate with Stellar SDK to submit the transaction
-      // For now, simulate the transaction
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+    const availableBalance = getAvailableBalance();
+    const amount = parseFloat(formData.amount);
+    
+    if (amount > availableBalance) {
       toast({
-        title: "Transaction Submitted",
-        description: `Sending ${formData.amount} ${formData.currency} to ${formData.recipient.substring(0, 8)}...`,
-      });
-      
-      // Reset form
-      setFormData({ recipient: '', amount: '', currency: 'iLede', memo: '' });
-      fetchWalletBalance(); // Refresh balance
-    } catch (error: any) {
-      toast({
-        title: "Transaction Failed", 
-        description: error.message || "Please check your details and try again.",
+        title: "Insufficient Balance",
+        description: `You only have ${availableBalance.toFixed(7)} ${formData.currency} available`,
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    try {
+      await sendPayment({
+        destinationPublicKey: formData.recipient,
+        amount: formData.amount,
+        assetCode: formData.currency === 'XLM' ? undefined : formData.currency,
+        memo: formData.memo || undefined
+      });
+      
+      // Reset form and refresh balance
+      setFormData({ recipient: '', amount: '', currency: 'XLM', memo: '' });
+      fetchWalletBalance();
+    } catch (error: any) {
+      // Error already handled in hook with toast
     }
   };
 
@@ -200,7 +191,6 @@ const Send = () => {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="iLede">iLede (Custom Asset)</SelectItem>
                     <SelectItem value="XLM">XLM (Stellar Lumens)</SelectItem>
                     <SelectItem value="USDC">USDC (USD Coin)</SelectItem>
                     <SelectItem value="EURC">EURC (Euro Coin)</SelectItem>
@@ -235,7 +225,7 @@ const Send = () => {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Available:</p>
-                    <p className="font-medium">{walletBalance.toFixed(7)} {formData.currency}</p>
+                    <p className="font-medium">{getAvailableBalance().toFixed(7)} {formData.currency}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Network Fee:</p>
@@ -253,7 +243,7 @@ const Send = () => {
             <Button 
               type="submit" 
               className="btn-wallet-primary w-full"
-              disabled={isLoading || !formData.recipient || !formData.amount || parseFloat(formData.amount) > walletBalance}
+              disabled={isLoading || !formData.recipient || !formData.amount || parseFloat(formData.amount) > getAvailableBalance()}
             >
               {isLoading ? 'Processing...' : 'Send Payment'}
             </Button>
