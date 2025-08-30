@@ -1,10 +1,13 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import WalletSidebar from './WalletSidebar';
+import { AppSidebar } from './AppSidebar';
 import ConstellationBackground from './ConstellationBackground';
 import { ThemeProvider } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
 
 const WalletLayout = () => {
   const { user, loading } = useAuth();
@@ -33,22 +36,34 @@ const WalletLayout = () => {
       enableSystem
       disableTransitionOnChange
     >
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Constellation Background */}
-        <ConstellationBackground className="fixed inset-0 -z-10" />
-        
-        <div className="flex">
-          {/* Sidebar */}
-          <WalletSidebar />
+      <SidebarProvider>
+        <div className="min-h-screen bg-background relative overflow-hidden w-full">
+          {/* Constellation Background */}
+          <ConstellationBackground className="fixed inset-0 -z-10" />
           
-          {/* Main Content */}
-          <main className="flex-1 min-h-screen">
-            <div className="relative z-10">
-              <Outlet />
-            </div>
-          </main>
+          {/* Global Sidebar Trigger */}
+          <header className="h-12 flex items-center border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
+            <SidebarTrigger asChild>
+              <Button variant="ghost" size="sm" className="ml-4">
+                <Menu className="w-4 h-4" />
+              </Button>
+            </SidebarTrigger>
+            <h1 className="ml-4 font-semibold text-lg">iLe-Pay Wallet</h1>
+          </header>
+          
+          <div className="flex min-h-screen w-full">
+            {/* Sidebar */}
+            <AppSidebar />
+            
+            {/* Main Content */}
+            <main className="flex-1">
+              <div className="relative z-10">
+                <Outlet />
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
+      </SidebarProvider>
     </ThemeProvider>
   );
 };

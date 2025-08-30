@@ -43,8 +43,20 @@ const Dashboard = () => {
     try {
       const balance = await getBalance();
       setBalanceData(balance);
-    } catch (error) {
+      
+      if (balance.account_id) {
+        toast({
+          title: "Wallet Loaded",
+          description: "Successfully connected to Stellar testnet",
+        });
+      }
+    } catch (error: any) {
       console.error('Error loading wallet data:', error);
+      toast({
+        title: "Connection Error",
+        description: error.message || "Failed to load wallet data",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingBalance(false);
     }
