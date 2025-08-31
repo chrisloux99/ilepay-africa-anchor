@@ -134,17 +134,19 @@ export function AppSidebar() {
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className={isCollapsed ? "w-10 px-0" : "w-full justify-start"}
         >
-          {theme === 'dark' ? (
-            <>
-              <Sun className="w-4 h-4" />
-              {!isCollapsed && <span className="ml-2">Light Mode</span>}
-            </>
-          ) : (
-            <>
-              <Moon className="w-4 h-4" />
-              {!isCollapsed && <span className="ml-2">Dark Mode</span>}
-            </>
-          )}
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-4 h-4" />
+                {!isCollapsed && <span>Light Mode</span>}
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4" />
+                {!isCollapsed && <span>Dark Mode</span>}
+              </>
+            )}
+          </div>
         </Button>
 
         {/* User Info */}
@@ -177,8 +179,10 @@ export function AppSidebar() {
               : "w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           }
         >
-          <LogOut className="w-4 h-4" />
-          {!isCollapsed && <span className="ml-2">Sign Out</span>}
+          <div className="flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            {!isCollapsed && <span>Sign Out</span>}
+          </div>
         </Button>
       </SidebarFooter>
     </Sidebar>
