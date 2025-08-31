@@ -15,7 +15,7 @@ export const STELLAR_CONFIG = {
   // Default asset for iLede wallet
   ILEDE_ASSET: {
     code: 'iLede',
-    issuer: 'PLACEHOLDER_ISSUER_ADDRESS', // To be configured
+    issuer: 'GDEIQZTFZVNGJ5UE5RFWU4XEHJEVWQZDGKOPOFGPV5EUVCAGBYHDS2VR', // To be configured
   },
   
   // Transaction configurations
@@ -33,7 +33,7 @@ export const STELLAR_CONFIG = {
 // Anchor Service Configuration Placeholders
 export const ANCHOR_CONFIG = {
   // Base URL for anchor services - will be set via environment variable  
-  BASE_URL: process.env.ANCHOR_BASE_URL || 'https://anchor.example.com',
+  BASE_URL: process.env.ANCHOR_BASE_URL || 'https://ilepay-africa-anchor.vercel.app/',
   
   // Service endpoints
   ENDPOINTS: {
@@ -48,7 +48,7 @@ export const ANCHOR_CONFIG = {
   SUPPORTED_ASSETS: [
     {
       code: 'USD',
-      issuer: 'PLACEHOLDER_USD_ISSUER', // To be configured
+      issuer: 'GASKUPD6XFLNVL2WKF5K5WAF3YWUBDOUAM54LO2S4CPXCI4ESG4BOUGC', // To be configured
     },
     {
       code: 'EUR', 
