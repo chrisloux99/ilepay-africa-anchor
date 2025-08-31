@@ -43,11 +43,7 @@ const WalletLayout = () => {
           
           {/* Global Sidebar Trigger */}
           <header className="h-12 flex items-center border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
-            <SidebarTrigger asChild>
-              <Button variant="ghost" size="sm" className="ml-4">
-                <Menu className="w-4 h-4" />
-              </Button>
-            </SidebarTrigger>
+            <SidebarTrigger className="ml-4" />
             <h1 className="ml-4 font-semibold text-lg">iLe-Pay Wallet</h1>
           </header>
           
