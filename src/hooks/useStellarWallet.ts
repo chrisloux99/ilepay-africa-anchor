@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import * as StellarSdk from 'stellar-sdk';
 
 interface WalletKeys {
@@ -11,6 +12,7 @@ interface WalletKeys {
 export const useStellarWallet = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Get stored wallet keys from localStorage
   const getStoredKeys = useCallback((): WalletKeys | null => {
@@ -58,6 +60,30 @@ export const useStellarWallet = () => {
       // Store keys locally (non-custodial)
       storeKeys(keys);
 
+      // Record wallet creation in database (triggers token distribution)
+      try {
+        if (user?.id) {
+          const { data: walletRecord, error: dbError } = await supabase
+            .from('stellar_wallets')
+            .insert({
+              user_id: user.id,
+              public_key: keys.publicKey,
+              welcome_tokens_amount: 100
+            })
+            .select()
+            .single();
+
+          if (dbError) {
+            console.error('Error recording wallet creation:', dbError);
+            // Don't fail the whole process, just log the error
+          } else {
+            console.log('Wallet recorded and tokens distributed:', walletRecord);
+          }
+        }
+      } catch (dbError) {
+        console.error('Database error during wallet creation:', dbError);
+      }
+
       // Log token distribution info
       if (data.tokens) {
         console.log('Welcome tokens distributed:', data.tokens);
@@ -80,7 +106,7 @@ export const useStellarWallet = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, storeKeys]);
+  }, [toast, storeKeys, user]);
 
   // Get account balance from Stellar network
   const getBalance = useCallback(async (publicKey?: string) => {

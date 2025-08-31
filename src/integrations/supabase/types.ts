@@ -155,6 +155,36 @@ export type Database = {
         }
         Relationships: []
       }
+      stellar_wallets: {
+        Row: {
+          created_at: string
+          id: string
+          public_key: string
+          tokens_distributed: boolean
+          updated_at: string
+          user_id: string
+          welcome_tokens_amount: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          public_key: string
+          tokens_distributed?: boolean
+          updated_at?: string
+          user_id: string
+          welcome_tokens_amount?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          public_key?: string
+          tokens_distributed?: boolean
+          updated_at?: string
+          user_id?: string
+          welcome_tokens_amount?: number | null
+        }
+        Relationships: []
+      }
       telecom_services: {
         Row: {
           active: boolean
