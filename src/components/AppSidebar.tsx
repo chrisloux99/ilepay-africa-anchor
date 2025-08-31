@@ -105,9 +105,10 @@ export function AppSidebar() {
               {sidebarItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.url);
+                console.log('Rendering sidebar item:', item.title, 'active:', active, 'isCollapsed:', isCollapsed);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton>
                       <NavLink
                         to={item.url}
                         className={getNavCls(active)}
@@ -131,7 +132,10 @@ export function AppSidebar() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={() => {
+            console.log('Theme toggle clicked, current theme:', theme, 'isCollapsed:', isCollapsed);
+            setTheme(theme === 'dark' ? 'light' : 'dark');
+          }}
           className={isCollapsed ? "w-10 px-0" : "w-full justify-start"}
         >
           <div className="flex items-center gap-2">
