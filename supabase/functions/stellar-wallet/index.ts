@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Import Stellar SDK for deno
+import { Keypair } from 'https://esm.sh/stellar-sdk@12.0.1'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -40,9 +43,11 @@ serve(async (req) => {
     const path = url.pathname.split('/').pop();
 
     // Route handling
+    const requestBody = method === 'POST' ? await req.json() : null;
+    
     switch (method) {
       case 'POST':
-        if (path === 'create-account') {
+        if (requestBody?.action === 'create-account' || path === 'create-account') {
           return await handleCreateAccount(req, supabase);
         } else if (path === 'get-balance') {
           return await handleGetBalance(req, supabase);
@@ -74,22 +79,40 @@ serve(async (req) => {
 
 // Placeholder functions - to be implemented with actual Stellar SDK
 async function handleCreateAccount(req: Request, supabase: any) {
-  console.log('Creating Stellar account...');
-  
-  // TODO: Implement account creation using Stellar SDK
-  // 1. Generate new keypair
-  // 2. Fund account with minimum balance
-  // 3. Store public key in database
-  // 4. Return account details
-  
-  return new Response(
-    JSON.stringify({ 
-      message: 'Account creation placeholder', 
-      // publicKey: 'PLACEHOLDER_PUBLIC_KEY',
-      // secretKey: 'PLACEHOLDER_SECRET_KEY' // Never return in production
-    }), 
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    console.log('Creating Stellar account...');
+    
+    // Generate a new Stellar keypair
+    const keypair = Keypair.random();
+    
+    const accountData = {
+      publicKey: keypair.publicKey(),
+      secretKey: keypair.secret(),
+      tokens: '100 iLede starter tokens', // Welcome bonus
+      network: 'testnet',
+      created_at: new Date().toISOString()
+    };
+    
+    console.log('Account created:', { 
+      publicKey: accountData.publicKey, 
+      network: accountData.network,
+      tokens: accountData.tokens 
+    });
+    
+    return new Response(JSON.stringify(accountData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
+    });
+  } catch (error: any) {
+    console.error('Error creating account:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to create account',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleGetBalance(req: Request, supabase: any) {

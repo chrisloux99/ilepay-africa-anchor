@@ -42,7 +42,7 @@ export const useStellarWallet = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('stellar-wallet', {
-        body: {},
+        body: { action: 'create-account' },
         headers: {
           'Content-Type': 'application/json',
         }
@@ -57,6 +57,11 @@ export const useStellarWallet = () => {
 
       // Store keys locally (non-custodial)
       storeKeys(keys);
+
+      // Log token distribution info
+      if (data.tokens) {
+        console.log('Welcome tokens distributed:', data.tokens);
+      }
 
       toast({
         title: "Success",

@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import ConstellationBackground from './ConstellationBackground';
 import { ThemeProvider } from 'next-themes';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStellarWallet } from '@/hooks/useStellarWallet';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import WalletSetup from './WalletSetup';
 
 const WalletLayout = () => {
   const { user, loading } = useAuth();
+  const { getStoredKeys } = useStellarWallet();
+  const [walletExists, setWalletExists] = useState<boolean | null>(null);
 
   if (loading) {
     return (
@@ -23,10 +25,33 @@ const WalletLayout = () => {
     );
   }
 
-  console.log('Auth state:', { user: !!user, loading });
+  useEffect(() => {
+    if (user && !loading) {
+      // Check if wallet exists after authentication
+      const keys = getStoredKeys();
+      setWalletExists(!!keys);
+    }
+  }, [user, loading, getStoredKeys]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // If user is authenticated but no wallet exists, show wallet setup
+  if (user && walletExists === false) {
+    return <WalletSetup onWalletCreated={() => setWalletExists(true)} />;
+  }
+
+  // Still checking for wallet
+  if (walletExists === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Setting up your wallet...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useStellarWallet } from '@/hooks/useStellarWallet';
-import { Loader2, Mail, Chrome, Wallet, Key, Plus } from 'lucide-react';
+import { Loader2, Mail, Chrome } from 'lucide-react';
 import Logo3D from '@/components/Logo3D';
 import ConstellationBackground from '@/components/ConstellationBackground';
 
@@ -18,11 +17,9 @@ const Auth = () => {
     email: '',
     password: '',
     displayName: '',
-    secretKey: '',
   });
   const { toast } = useToast();
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { createAccount, getStoredKeys, clearWallet } = useStellarWallet();
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -84,66 +81,6 @@ const Auth = () => {
     setIsLoading(false);
   };
 
-  const handleCreateWallet = async () => {
-    setIsLoading(true);
-    try {
-      const keys = await createAccount();
-      toast({
-        title: "Wallet Created!",
-        description: `New Stellar wallet created. Public Key: ${keys.publicKey.substring(0, 8)}...`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Wallet Creation Failed",
-        description: error.message || "Failed to create wallet",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
-
-  const handleImportWallet = async () => {
-    if (!formData.secretKey) {
-      toast({
-        title: "Secret Key Required",
-        description: "Please enter your Stellar secret key",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Validate and import the secret key
-      const { Keypair } = await import('stellar-sdk');
-      const keypair = Keypair.fromSecret(formData.secretKey);
-      
-      // Store the keys locally
-      const keys = {
-        publicKey: keypair.publicKey(),
-        secretKey: formData.secretKey
-      };
-      
-      localStorage.setItem('stellar_wallet_keys', JSON.stringify(keys));
-      
-      toast({
-        title: "Wallet Imported!",
-        description: `Wallet imported successfully. Public Key: ${keys.publicKey.substring(0, 8)}...`,
-      });
-      
-      setFormData(prev => ({ ...prev, secretKey: '' }));
-    } catch (error: any) {
-      toast({
-        title: "Import Failed",
-        description: "Invalid secret key. Please check and try again.",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
-
-  const existingWallet = getStoredKeys();
-
   return (
     <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
       <ConstellationBackground className="fixed inset-0 -z-10" />
@@ -162,102 +99,11 @@ const Auth = () => {
         </CardHeader>
         
         <CardContent>
-          <Tabs defaultValue={existingWallet ? "signin" : "wallet"} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="wallet">Wallet</TabsTrigger>
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="wallet" className="space-y-4">
-              {existingWallet ? (
-                <div className="space-y-4">
-                  <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
-                    <div className="flex items-center gap-3">
-                      <Wallet className="w-8 h-8 text-primary" />
-                      <div>
-                        <h3 className="font-medium">Wallet Found</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {existingWallet.publicKey.substring(0, 8)}...{existingWallet.publicKey.substring(-8)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => {
-                      clearWallet();
-                      toast({
-                        title: "Wallet Cleared",
-                        description: "Your wallet has been removed from this device",
-                      });
-                    }}
-                  >
-                    Clear Wallet
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Button
-                    className="btn-wallet-primary w-full"
-                    onClick={handleCreateWallet}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Wallet...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create New Wallet
-                      </>
-                    )}
-                  </Button>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">Or</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="secret-key">Import Existing Wallet</Label>
-                    <Input
-                      id="secret-key"
-                      type="password"
-                      placeholder="Enter your Stellar secret key (S...)"
-                      value={formData.secretKey}
-                      onChange={(e) => setFormData(prev => ({ ...prev, secretKey: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleImportWallet}
-                    disabled={isLoading || !formData.secretKey}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="w-4 h-4 mr-2" />
-                        Import Wallet
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
             
             <TabsContent value="signin" className="space-y-4">
               <form onSubmit={handleSignIn} className="space-y-4">
