@@ -82,41 +82,152 @@ serve(async (req) => {
 
 // Placeholder functions - to be implemented with actual anchor service integration
 async function handleInitiateDeposit(req: Request, supabase: any) {
-  console.log('Initiating deposit...');
-  
-  // TODO: Implement deposit initiation
-  // 1. Validate user and asset
-  // 2. Call anchor's deposit endpoint
-  // 3. Return interactive URL for user
-  // 4. Store transaction reference
-  
-  return new Response(
-    JSON.stringify({ 
-      message: 'Deposit initiation placeholder',
-      // interactiveUrl: 'PLACEHOLDER_DEPOSIT_URL',
-      // transactionId: 'PLACEHOLDER_TRANSACTION_ID'
-    }), 
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    const { asset_code, amount, account } = await req.json();
+    console.log('Initiating deposit:', { asset_code, amount, account });
+    
+    // Get authenticated user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create anchor transaction record
+    const { data: transaction, error: dbError } = await supabase
+      .from('anchor_transactions')
+      .insert({
+        user_id: user.id,
+        kind: 'deposit',
+        asset_code,
+        amount_in: amount,
+        status: 'incomplete',
+        anchor_id: crypto.randomUUID()
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return new Response(JSON.stringify({ error: 'Failed to create transaction' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // For testnet, return a mock interactive URL
+    const interactiveUrl = `${Deno.env.get('ANCHOR_BASE_URL') || 'https://testanchor.stellar.org'}/sep24/transactions/deposit/interactive?transaction_id=${transaction.id}`;
+    
+    return new Response(JSON.stringify({
+      type: 'interactive_customer_info_needed',
+      url: interactiveUrl,
+      id: transaction.id
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error('Error initiating deposit:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to initiate deposit',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleInitiateWithdraw(req: Request, supabase: any) {
-  console.log('Initiating withdrawal...');
-  
-  // TODO: Implement withdrawal initiation
-  // 1. Validate user balance and asset
-  // 2. Call anchor's withdraw endpoint
-  // 3. Return interactive URL for user
-  // 4. Store transaction reference
-  
-  return new Response(
-    JSON.stringify({ 
-      message: 'Withdrawal initiation placeholder',
-      // interactiveUrl: 'PLACEHOLDER_WITHDRAW_URL',
-      // transactionId: 'PLACEHOLDER_TRANSACTION_ID'
-    }), 
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    const { asset_code, amount, dest } = await req.json();
+    console.log('Initiating withdrawal:', { asset_code, amount, dest });
+    
+    // Get authenticated user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check user balance
+    const { data: wallet } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', user.id)
+      .eq('asset_code', asset_code)
+      .single();
+
+    if (!wallet || parseFloat(wallet.balance) < parseFloat(amount)) {
+      return new Response(JSON.stringify({ error: 'Insufficient balance' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Create anchor transaction record
+    const { data: transaction, error: dbError } = await supabase
+      .from('anchor_transactions')
+      .insert({
+        user_id: user.id,
+        kind: 'withdrawal',
+        asset_code,
+        amount_out: amount,
+        status: 'incomplete',
+        anchor_id: crypto.randomUUID()
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return new Response(JSON.stringify({ error: 'Failed to create transaction' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // For testnet, return a mock interactive URL
+    const interactiveUrl = `${Deno.env.get('ANCHOR_BASE_URL') || 'https://testanchor.stellar.org'}/sep24/transactions/withdraw/interactive?transaction_id=${transaction.id}`;
+    
+    return new Response(JSON.stringify({
+      type: 'interactive_customer_info_needed',
+      url: interactiveUrl,
+      id: transaction.id
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error('Error initiating withdrawal:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to initiate withdrawal',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleKYCSubmit(req: Request, supabase: any) {
@@ -172,18 +283,68 @@ async function handleTransactionStatus(req: Request, supabase: any) {
 }
 
 async function handleTransactionHistory(req: Request, supabase: any) {
-  console.log('Getting transaction history...');
-  
-  // TODO: Implement transaction history fetching
-  // 1. Get user ID from auth
-  // 2. Query database for user's transactions
-  // 3. Return transaction list
-  
-  return new Response(
-    JSON.stringify({ 
-      message: 'Transaction history placeholder',
-      // transactions: []
-    }), 
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    const url = new URL(req.url);
+    const asset_code = url.searchParams.get('asset_code');
+    const kind = url.searchParams.get('kind');
+    const limit = parseInt(url.searchParams.get('limit') || '20');
+    
+    // Get authenticated user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    let query = supabase
+      .from('anchor_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (asset_code) {
+      query = query.eq('asset_code', asset_code);
+    }
+    
+    if (kind) {
+      query = query.eq('kind', kind);
+    }
+
+    const { data: transactions, error: dbError } = await query;
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      return new Response(JSON.stringify({ error: 'Failed to fetch transactions' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({
+      transactions: transactions || []
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error('Error getting transaction history:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to get transaction history',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }

@@ -1,0 +1,59 @@
+# Stellar Network Configuration for iLede Wallet
+VERSION="2.0.0"
+
+# Network Information
+NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+HORIZON_URL="https://horizon-testnet.stellar.org"
+
+# Organization Information
+ORGANIZATION_NAME="iLede Wallet"
+ORGANIZATION_URL="https://iledepay.com"
+ORGANIZATION_LOGO="https://iledepay.com/logo.png"
+ORGANIZATION_DESCRIPTION="iLede Wallet - Your gateway to the Stellar network in Africa"
+
+# Anchor Services Configuration (SEP-6, SEP-10, SEP-24)
+WEB_AUTH_ENDPOINT="https://jecwaulaaxwdqrchanzy.supabase.co/functions/v1/sep10-auth"
+TRANSFER_SERVER="https://jecwaulaaxwdqrchanzy.supabase.co/functions/v1/anchor-services"
+TRANSFER_SERVER_SEP0024="https://jecwaulaaxwdqrchanzy.supabase.co/functions/v1/anchor-services"
+
+# Signing Key for Authentication (SEP-10)
+SIGNING_KEY="GDQOE23CFSUMSVQK4Y5JHPPYK73VYCNHZHA7ENKCV37P6SUEO6XQBKPP"
+
+# Accounts
+[[PRINCIPALS]]
+name="iLede Wallet"
+github="ilepay"
+
+# Supported Currencies
+[[CURRENCIES]]
+code="iLede"
+issuer="GDEIQZTFZVNGJ5UE5RFWU4XEHJEVWQZDGKOPOFGPV5EUVCAGBYHDS2VR"
+display_decimals=7
+name="iLede Token"
+desc="The native token of the iLede ecosystem"
+conditions="Available for all users"
+image="https://iledepay.com/assets/ilede-logo.png"
+
+[[CURRENCIES]]
+code="USD"
+issuer="GASKUPD6XFLNVL2WKF5K5WAF3YWUBDOUAM54LO2S4CPXCI4ESG4BOUGC"
+display_decimals=2
+name="US Dollar"
+desc="USD token on Stellar testnet"
+conditions="Available through anchor services"
+image="https://www.stellar.org/assets/icons/usd.png"
+
+[[CURRENCIES]]
+code="XLM"
+display_decimals=7
+name="Stellar Lumens"
+desc="Native Stellar token"
+conditions="Available for all users"
+image="https://www.stellar.org/assets/icons/xlm.png"
+
+# Documentation
+[[DOCUMENTATION]]
+ORG_NAME="iLede Wallet"
+ORG_URL="https://iledepay.com"
+ORG_LOGO="https://iledepay.com/logo.png"
+ORG_DESCRIPTION="Your gateway to the Stellar network in Africa"

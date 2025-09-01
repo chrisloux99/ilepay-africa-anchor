@@ -13,3 +13,6 @@ verify_jwt = true
 
 [functions.anchor-services] 
 verify_jwt = true
+
+[functions.sep10-auth]
+verify_jwt = false
