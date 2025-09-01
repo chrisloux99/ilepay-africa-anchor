@@ -14,6 +14,15 @@ const WalletLayout = () => {
   const { getStoredKeys } = useStellarWallet();
   const [walletExists, setWalletExists] = useState<boolean | null>(null);
 
+  // Always call useEffect - hooks must be called in the same order every render
+  useEffect(() => {
+    if (user && !loading) {
+      // Check if wallet exists after authentication
+      const keys = getStoredKeys();
+      setWalletExists(!!keys);
+    }
+  }, [user, loading, getStoredKeys]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -24,14 +33,6 @@ const WalletLayout = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (user && !loading) {
-      // Check if wallet exists after authentication
-      const keys = getStoredKeys();
-      setWalletExists(!!keys);
-    }
-  }, [user, loading, getStoredKeys]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
