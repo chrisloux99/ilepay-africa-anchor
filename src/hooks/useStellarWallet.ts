@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import * as StellarSdk from 'stellar-sdk';
 
 interface WalletKeys {
-  publicKey: string;GDEIQZTFZVNGJ5UE5RFWU4XEHJEVWQZDGKOPOFGPV5EUVCAGBYHDS2VR
-  secretKey: string;SANBF3AT3WKBWSZHUKDCUSIBIU4BEA72LOCTSRIFEIB3I4H4HDF54QBI
+  publicKey: string;
+  secretKey: string;
 }
 
 export const useStellarWallet = () => {
