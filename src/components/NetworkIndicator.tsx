@@ -1,15 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Globe } from 'lucide-react';
+import { STELLAR_CONFIG } from '@/config/stellar';
 
 interface NetworkIndicatorProps {
-  network?: 'testnet' | 'mainnet';
   className?: string;
 }
 
 export const NetworkIndicator = ({ 
-  network = 'testnet', 
   className 
 }: NetworkIndicatorProps) => {
+  const network = STELLAR_CONFIG.NETWORK as 'testnet' | 'mainnet';
   const isTestnet = network === 'testnet';
   
   return (
