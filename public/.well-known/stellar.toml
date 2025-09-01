@@ -7,7 +7,7 @@ HORIZON_URL="https://horizon-testnet.stellar.org"
 
 # Organization Information
 ORGANIZATION_NAME="iLede Wallet"
-ORGANIZATION_URL="https://iledepay.com"
+ORGANIZATION_URL="https://ilepay-africa-anchor.vercel.app"
 ORGANIZATION_LOGO="https://iledepay.com/logo.png"
 ORGANIZATION_DESCRIPTION="iLede Wallet - Your gateway to the Stellar network in Africa"
 
@@ -22,7 +22,7 @@ SIGNING_KEY="GDQOE23CFSUMSVQK4Y5JHPPYK73VYCNHZHA7ENKCV37P6SUEO6XQBKPP"
 # Accounts
 [[PRINCIPALS]]
 name="iLede Wallet"
-github="ilepay"
+github="https://github.dev/chrisloux99/ilepay-africa-anchor"
 
 # Supported Currencies
 [[CURRENCIES]]
@@ -54,6 +54,6 @@ image="https://www.stellar.org/assets/icons/xlm.png"
 # Documentation
 [[DOCUMENTATION]]
 ORG_NAME="iLede Wallet"
-ORG_URL="https://iledepay.com"
+ORG_URL="https://ilepay-africa-anchor.vercel.app"
 ORG_LOGO="https://iledepay.com/logo.png"
 ORG_DESCRIPTION="Your gateway to the Stellar network in Africa"
