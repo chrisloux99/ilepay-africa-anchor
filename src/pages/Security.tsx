@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, Lock, Key, Smartphone, AlertTriangle, CheckCircle, XCircle, Eye } from 'lucide-react';
+import React from 'react';
+import { Shield, Lock, Key, Smartphone, AlertTriangle, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,73 +7,30 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useSecurityData } from '@/hooks/useSecurityData';
 
 const Security = () => {
   const { toast } = useToast();
-  const [securityFeatures, setSecurityFeatures] = useState({
-    twoFactor: true,
-    biometric: true,
-    sessionTimeout: true,
-    emailAlerts: true,
-    loginAlerts: true,
-    transactionPIN: false
-  });
-
-  // Mock security data
-  const securityStatus = {
-    score: 85,
-    level: 'High',
-    lastAudit: '2024-01-15T10:30:00Z',
-    activeDevices: 3,
-    recentActivity: [
-      {
-        id: '1',
-        type: 'login',
-        device: 'iPhone 15 Pro',
-        location: 'Lagos, Nigeria',
-        timestamp: '2024-01-15T14:20:00Z',
-        status: 'success'
-      },
-      {
-        id: '2',
-        type: 'password_change',
-        device: 'MacBook Pro',
-        location: 'Lagos, Nigeria',
-        timestamp: '2024-01-14T09:15:00Z',
-        status: 'success'
-      },
-      {
-        id: '3',
-        type: 'failed_login',
-        device: 'Unknown Device',
-        location: 'Unknown Location',
-        timestamp: '2024-01-13T22:45:00Z',
-        status: 'blocked'
-      }
-    ],
-    trustedDevices: [
-      { id: '1', name: 'iPhone 15 Pro', lastUsed: '2024-01-15T14:20:00Z', current: true },
-      { id: '2', name: 'MacBook Pro', lastUsed: '2024-01-14T09:15:00Z', current: false },
-      { id: '3', name: 'iPad Air', lastUsed: '2024-01-10T16:30:00Z', current: false }
-    ]
-  };
-
-  const toggleSecurityFeature = (feature: string) => {
-    setSecurityFeatures(prev => ({
-      ...prev,
-      [feature]: !prev[feature as keyof typeof prev]
-    }));
-    
-    toast({
-      title: "Security Setting Updated",
-      description: `${feature} has been ${securityFeatures[feature as keyof typeof securityFeatures] ? 'disabled' : 'enabled'}`,
-    });
-  };
+  const {
+    securitySettings,
+    securityActivities,
+    trustedDevices,
+    securityScore,
+    isLoading,
+    toggleSecurityFeature,
+    removeTrustedDevice
+  } = useSecurityData();
 
   const getSecurityScoreColor = (score: number) => {
     if (score >= 80) return 'text-success';
     if (score >= 60) return 'text-warning';
     return 'text-destructive';
+  };
+
+  const getSecurityLevel = (score: number) => {
+    if (score >= 80) return 'High';
+    if (score >= 60) return 'Medium';
+    return 'Low';
   };
 
   const getActivityIcon = (type: string, status: string) => {
@@ -114,21 +71,21 @@ const Security = () => {
                   <path
                     className="text-primary stroke-current"
                     strokeWidth="3"
-                    strokeDasharray={`${securityStatus.score}, 100`}
+                    strokeDasharray={`${securityScore}, 100`}
                     strokeLinecap="round"
                     fill="none"
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`text-lg font-bold ${getSecurityScoreColor(securityStatus.score)}`}>
-                    {securityStatus.score}%
+                  <span className={`text-lg font-bold ${getSecurityScoreColor(securityScore)}`}>
+                    {securityScore}%
                   </span>
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Security Level: {securityStatus.level}</h3>
-                <p className="text-muted-foreground">Last security audit: {new Date(securityStatus.lastAudit).toLocaleDateString()}</p>
+                <h3 className="text-lg font-semibold">Security Level: {getSecurityLevel(securityScore)}</h3>
+                <p className="text-muted-foreground">Last security audit: {new Date().toLocaleDateString()}</p>
               </div>
             </div>
             <Button className="btn-wallet-primary">
@@ -154,12 +111,13 @@ const Security = () => {
                 <p className="text-sm text-muted-foreground">Extra layer of security</p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={securityFeatures.twoFactor ? "default" : "secondary"}>
-                  {securityFeatures.twoFactor ? "Enabled" : "Disabled"}
+                <Badge variant={securitySettings.twoFactor ? "default" : "secondary"}>
+                  {securitySettings.twoFactor ? "Enabled" : "Disabled"}
                 </Badge>
                 <Switch
-                  checked={securityFeatures.twoFactor}
+                  checked={securitySettings.twoFactor}
                   onCheckedChange={() => toggleSecurityFeature('twoFactor')}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -170,12 +128,13 @@ const Security = () => {
                 <p className="text-sm text-muted-foreground">Fingerprint/Face unlock</p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={securityFeatures.biometric ? "default" : "secondary"}>
-                  {securityFeatures.biometric ? "Enabled" : "Disabled"}
+                <Badge variant={securitySettings.biometric ? "default" : "secondary"}>
+                  {securitySettings.biometric ? "Enabled" : "Disabled"}
                 </Badge>
                 <Switch
-                  checked={securityFeatures.biometric}
+                  checked={securitySettings.biometric}
                   onCheckedChange={() => toggleSecurityFeature('biometric')}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -186,12 +145,13 @@ const Security = () => {
                 <p className="text-sm text-muted-foreground">Auto-lock after inactivity</p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={securityFeatures.sessionTimeout ? "default" : "secondary"}>
-                  {securityFeatures.sessionTimeout ? "Enabled" : "Disabled"}
+                <Badge variant={securitySettings.sessionTimeout ? "default" : "secondary"}>
+                  {securitySettings.sessionTimeout ? "Enabled" : "Disabled"}
                 </Badge>
                 <Switch
-                  checked={securityFeatures.sessionTimeout}
+                  checked={securitySettings.sessionTimeout}
                   onCheckedChange={() => toggleSecurityFeature('sessionTimeout')}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -202,12 +162,13 @@ const Security = () => {
                 <p className="text-sm text-muted-foreground">PIN for transactions</p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={securityFeatures.transactionPIN ? "default" : "secondary"}>
-                  {securityFeatures.transactionPIN ? "Enabled" : "Disabled"}
+                <Badge variant={securitySettings.transactionPIN ? "default" : "secondary"}>
+                  {securitySettings.transactionPIN ? "Enabled" : "Disabled"}
                 </Badge>
                 <Switch
-                  checked={securityFeatures.transactionPIN}
+                  checked={securitySettings.transactionPIN}
                   onCheckedChange={() => toggleSecurityFeature('transactionPIN')}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -224,7 +185,7 @@ const Security = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {securityStatus.trustedDevices.map((device) => (
+              {trustedDevices.map((device) => (
                 <div key={device.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -234,14 +195,25 @@ const Security = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Last used: {new Date(device.lastUsed).toLocaleDateString()}
+                      Last used: {new Date(device.last_used).toLocaleDateString()}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Remove
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => removeTrustedDevice(device.id)}
+                    disabled={device.current || isLoading}
+                  >
+                    {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Remove'}
                   </Button>
                 </div>
               ))}
+              {trustedDevices.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <Smartphone className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No trusted devices found</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -257,32 +229,40 @@ const Security = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {securityStatus.recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50">
-                <div className="flex items-center gap-3">
-                  {getActivityIcon(activity.type, activity.status)}
-                  <div>
-                    <p className="font-medium capitalize">
-                      {activity.type.replace('_', ' ')}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {activity.device} • {activity.location}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(activity.timestamp).toLocaleString()}
-                    </p>
+            {securityActivities.length > 0 ? (
+              securityActivities.map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50">
+                  <div className="flex items-center gap-3">
+                    {getActivityIcon(activity.type, activity.status)}
+                    <div>
+                      <p className="font-medium capitalize">
+                        {activity.type.replace('_', ' ')}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {activity.device} • {activity.location}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
+                  <Badge 
+                    variant={
+                      activity.status === 'success' ? 'default' :
+                      activity.status === 'blocked' ? 'destructive' : 'secondary'
+                    }
+                  >
+                    {activity.status}
+                  </Badge>
                 </div>
-                <Badge 
-                  variant={
-                    activity.status === 'success' ? 'default' :
-                    activity.status === 'blocked' ? 'destructive' : 'secondary'
-                  }
-                >
-                  {activity.status}
-                </Badge>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertTriangle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No recent security activity</p>
+                <p className="text-sm">Security events will appear here</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -294,7 +274,7 @@ const Security = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {!securityFeatures.transactionPIN && (
+            {!securitySettings.transactionPIN && (
               <Alert>
                 <Shield className="h-4 w-4" />
                 <AlertDescription>

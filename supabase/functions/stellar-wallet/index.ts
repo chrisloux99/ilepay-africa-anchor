@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Import Stellar SDK for deno
+// Import Stellar SDK for deno - use specific stable version
 import { 
   Keypair, 
   Server, 
@@ -11,7 +11,7 @@ import {
   Asset,
   Memo,
   BASE_FEE 
-} from 'https://esm.sh/stellar-sdk@13.3.0'
+} from 'https://esm.sh/stellar-sdk@12.3.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,8 +60,10 @@ serve(async (req) => {
           return await handleCreateAccount(req, supabase);
         } else if (path === 'get-balance') {
           return await handleGetBalance(req, supabase);
-        } else if (path === 'send-payment') {
+        } else if (path === 'build-transaction') {
           return await handleSendPayment(req, supabase);
+        } else if (path === 'submit-transaction') {
+          return await handleSubmitTransaction(req, supabase);
         }
         break;
       
@@ -233,19 +235,67 @@ async function handleGetBalance(req: Request, supabase: any) {
 async function handleSendPayment(req: Request, supabase: any) {
   console.log('Sending payment...');
   
-  // TODO: Implement payment sending using Stellar SDK
-  // 1. Build transaction
-  // 2. Sign transaction
-  // 3. Submit to network
-  // 4. Return transaction hash
-  
-  return new Response(
-    JSON.stringify({ 
-      message: 'Payment send placeholder',
-      // transactionHash: 'PLACEHOLDER_HASH'
-    }), 
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    const STELLAR_NETWORK = Deno.env.get('STELLAR_NETWORK') || 'testnet';
+    const HORIZON_URL = STELLAR_NETWORK === 'testnet' 
+      ? 'https://horizon-testnet.stellar.org'
+      : 'https://horizon.stellar.org';
+    const NETWORK_PASSPHRASE = STELLAR_NETWORK === 'mainnet' 
+      ? Networks.PUBLIC 
+      : Networks.TESTNET;
+
+    const requestBody = await req.json();
+    const { sourcePublicKey, destinationPublicKey, amount, memo } = requestBody;
+
+    if (!sourcePublicKey || !destinationPublicKey || !amount) {
+      return new Response(JSON.stringify({ 
+        error: 'Missing required parameters: sourcePublicKey, destinationPublicKey, amount' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const server = new Server(HORIZON_URL);
+    
+    // Load source account
+    const sourceAccount = await server.loadAccount(sourcePublicKey);
+    
+    // Build transaction
+    const transaction = new TransactionBuilder(sourceAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(Operation.payment({
+        destination: destinationPublicKey,
+        asset: Asset.native(),
+        amount: amount.toString(),
+      }))
+      .setTimeout(180);
+
+    if (memo) {
+      transaction.addMemo(Memo.text(memo));
+    }
+
+    const builtTransaction = transaction.build();
+    
+    return new Response(JSON.stringify({
+      transactionXDR: builtTransaction.toXDR(),
+      networkPassphrase: NETWORK_PASSPHRASE
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error('Error building payment transaction:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to build payment transaction',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleAccountInfo(req: Request, supabase: any) {
@@ -316,6 +366,55 @@ async function handleAccountInfo(req: Request, supabase: any) {
     console.error('Error getting account info:', error);
     return new Response(JSON.stringify({ 
       error: 'Failed to get account info',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleSubmitTransaction(req: Request, supabase: any) {
+  try {
+    console.log('Submitting signed transaction...');
+    
+    const STELLAR_NETWORK = Deno.env.get('STELLAR_NETWORK') || 'testnet';
+    const HORIZON_URL = STELLAR_NETWORK === 'testnet' 
+      ? 'https://horizon-testnet.stellar.org'
+      : 'https://horizon.stellar.org';
+
+    const requestBody = await req.json();
+    const { signedTransactionXDR, amount, assetCode, destinationPublicKey, memo } = requestBody;
+
+    if (!signedTransactionXDR) {
+      return new Response(JSON.stringify({ 
+        error: 'Missing signed transaction XDR' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const server = new Server(HORIZON_URL);
+    
+    // Submit transaction to Stellar network
+    const result = await server.submitTransaction(signedTransactionXDR);
+    
+    console.log('Transaction submitted successfully:', result.hash);
+    
+    return new Response(JSON.stringify({
+      hash: result.hash,
+      ledger: result.ledger,
+      envelope_xdr: result.envelope_xdr,
+      result_xdr: result.result_xdr
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error('Error submitting transaction:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to submit transaction',
       message: error.message 
     }), {
       status: 500,
