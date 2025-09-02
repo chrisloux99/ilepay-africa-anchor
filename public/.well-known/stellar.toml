@@ -22,7 +22,7 @@ SIGNING_KEY="GDQOE23CFSUMSVQK4Y5JHPPYK73VYCNHZHA7ENKCV37P6SUEO6XQBKPP"
 # Accounts
 [[PRINCIPALS]] 
 name="iLede Wallet"
- +260764168772
+phone= +260764168772
 github="https://github.dev/chrisloux99/ilepay-africa-anchor"
 
 # Supported Currencies
