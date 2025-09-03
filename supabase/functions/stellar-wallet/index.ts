@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Import Stellar SDK for deno - use specific stable version
-import { 
+// Import Stellar SDK for deno - use a compatible version
+import * as StellarSdk from 'https://esm.sh/stellar-sdk@11.3.0'
+
+// Extract the needed classes from the SDK
+const { 
   Keypair, 
   Server, 
   Networks, 
@@ -11,7 +14,7 @@ import {
   Asset,
   Memo,
   BASE_FEE 
-} from 'https://esm.sh/stellar-sdk@12.3.0'
+} = StellarSdk
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
