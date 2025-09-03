@@ -60,13 +60,13 @@ serve(async (req) => {
     switch (method) {
       case 'POST':
         if (requestBody?.action === 'create-account' || path === 'create-account') {
-          return await handleCreateAccount(req, supabase);
+          return await handleCreateAccount(req, supabase, requestBody);
         } else if (path === 'get-balance') {
-          return await handleGetBalance(req, supabase);
+          return await handleGetBalance(req, supabase, requestBody);
         } else if (path === 'build-transaction') {
-          return await handleSendPayment(req, supabase);
+          return await handleSendPayment(req, supabase, requestBody);
         } else if (path === 'submit-transaction') {
-          return await handleSubmitTransaction(req, supabase);
+          return await handleSubmitTransaction(req, supabase, requestBody);
         }
         break;
       
@@ -92,7 +92,7 @@ serve(async (req) => {
 });
 
 // Stellar wallet functions with real implementations
-async function handleCreateAccount(req: Request, supabase: any) {
+async function handleCreateAccount(req: Request, supabase: any, requestBody?: any) {
   try {
     console.log('Creating Stellar account...');
     
@@ -155,7 +155,7 @@ async function handleCreateAccount(req: Request, supabase: any) {
   }
 }
 
-async function handleGetBalance(req: Request, supabase: any) {
+async function handleGetBalance(req: Request, supabase: any, requestBody?: any) {
   try {
     console.log('Getting account balance...');
     
@@ -164,8 +164,7 @@ async function handleGetBalance(req: Request, supabase: any) {
       ? 'https://horizon-testnet.stellar.org'
       : 'https://horizon.stellar.org';
     
-    const requestBody = await req.json();
-    const { publicKey } = requestBody;
+    const { publicKey } = requestBody || {};
     
     if (!publicKey) {
       return new Response(JSON.stringify({ 
@@ -235,7 +234,7 @@ async function handleGetBalance(req: Request, supabase: any) {
   }
 }
 
-async function handleSendPayment(req: Request, supabase: any) {
+async function handleSendPayment(req: Request, supabase: any, requestBody?: any) {
   console.log('Sending payment...');
   
   try {
@@ -247,8 +246,7 @@ async function handleSendPayment(req: Request, supabase: any) {
       ? Networks.PUBLIC 
       : Networks.TESTNET;
 
-    const requestBody = await req.json();
-    const { sourcePublicKey, destinationPublicKey, amount, memo } = requestBody;
+    const { sourcePublicKey, destinationPublicKey, amount, memo } = requestBody || {};
 
     if (!sourcePublicKey || !destinationPublicKey || !amount) {
       return new Response(JSON.stringify({ 
@@ -377,7 +375,7 @@ async function handleAccountInfo(req: Request, supabase: any) {
   }
 }
 
-async function handleSubmitTransaction(req: Request, supabase: any) {
+async function handleSubmitTransaction(req: Request, supabase: any, requestBody?: any) {
   try {
     console.log('Submitting signed transaction...');
     
@@ -386,8 +384,7 @@ async function handleSubmitTransaction(req: Request, supabase: any) {
       ? 'https://horizon-testnet.stellar.org'
       : 'https://horizon.stellar.org';
 
-    const requestBody = await req.json();
-    const { signedTransactionXDR, amount, assetCode, destinationPublicKey, memo } = requestBody;
+    const { signedTransactionXDR, amount, assetCode, destinationPublicKey, memo } = requestBody || {};
 
     if (!signedTransactionXDR) {
       return new Response(JSON.stringify({ 
