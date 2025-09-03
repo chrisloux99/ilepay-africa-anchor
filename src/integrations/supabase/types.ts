@@ -127,6 +127,7 @@ export type Database = {
           display_name: string | null
           id: string
           phone_number: string | null
+          security_settings: Json | null
           updated_at: string
           user_id: string
           wallet_address: string | null
@@ -138,6 +139,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone_number?: string | null
+          security_settings?: Json | null
           updated_at?: string
           user_id: string
           wallet_address?: string | null
@@ -149,6 +151,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone_number?: string | null
+          security_settings?: Json | null
           updated_at?: string
           user_id?: string
           wallet_address?: string | null

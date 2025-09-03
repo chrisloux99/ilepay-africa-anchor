@@ -76,8 +76,8 @@ export const useSecurityData = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (profile?.security_settings) {
-        const settings = JSON.parse(profile.security_settings);
+      if (profile && (profile as any).security_settings) {
+        const settings = JSON.parse((profile as any).security_settings);
         setSecuritySettings(settings);
         setSecurityScore(calculateSecurityScore(settings));
       }
